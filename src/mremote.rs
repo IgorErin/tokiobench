@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::{fs, thread};
 
 use std::time::Duration;
@@ -9,12 +8,11 @@ use std::sync::{mpsc, mpsc::SyncSender, Arc};
 
 use tokio_metrics::RuntimeMonitor;
 
-use std::fs::File;
 use std::path::{Path, PathBuf};
-
 use tokiobench::params;
 use tokiobench::params::metrics as m;
 use tokiobench::rt;
+use tokiobench::serializer::MetricsSerializable;
 
 fn metrics_path() -> PathBuf {
     let mut path = std::env::current_dir().unwrap();
@@ -34,17 +32,6 @@ fn mk_prefix_dir(folder: &str) -> PathBuf {
     }
 
     path
-}
-
-fn store(prefix: &Path, name: &str, data: &[u8]) {
-    let result_path = {
-        let mut prefix = PathBuf::from(prefix);
-        prefix.push(name);
-        prefix
-    };
-
-    let mut f = File::create(result_path).unwrap();
-    f.write_all(data).unwrap();
 }
 
 type MetricSyncSender = SyncSender<tokio_metrics::RuntimeMetrics>;
@@ -110,17 +97,18 @@ fn run_iter(nspawn: usize, nworkers: usize) -> Vec<tokio_metrics::RuntimeMetrics
 }
 
 fn run_metrics(name: &str, nspawn: usize, nworkers: usize) {
+    let prefix = mk_prefix_dir(name);
     let name = format!("{}_nwork({})", name, nworkers);
-
-    let prefix = mk_prefix_dir(&name);
+    let mut metrics_vec: Vec<MetricsSerializable> = Vec::new();
 
     for niter in 0..m::N_ITER {
         let metrics = run_iter(nspawn, nworkers);
-        let metrics_u8 = serde_json::to_vec_pretty(&metrics).unwrap();
+        metrics_vec.append(&mut metrics.iter()
+            .map(|m| { MetricsSerializable::new(niter, m) })
+            .collect::<Vec<MetricsSerializable>>());
 
-        let name = format!("iter_{niter}.json");
-        store(&prefix, &name, &metrics_u8);
     }
+    tokiobench::mutils::store(&prefix, &name, &metrics_vec);
 }
 
 fn main() -> () {
