@@ -7,7 +7,7 @@ pub const NS_SPAWN_GLOBAL: [usize; 16] = [
     100, 200, 250, 300, 500, 750, 1000, 2_000, 3000, 4000, 5_000, 6_000, 7_000, 8_000, 9000, 10_000,
 ];
 pub const NS_SPAWN_LOCAL: [usize; 15] = [
-    50, 100, 150, 200, 230, 240, 250, 260, 270, 300, 320, 350, 400, 420, 450,
+    1_000, 2_000, 3_000, 4_000, 5_000, 6_000, 7_000, 8_000, 9_000, 10_000, 11_000, 12_000, 13_000, 14_000, 15_000,
 ];
 
 #[cfg(not(feature = "full"))]
@@ -25,7 +25,8 @@ pub const NS_SPLIT_GLOBAL: [usize; 10] = [10, 50, 100, 150, 200, 250, 300, 350, 
 pub const N_SPAWN_GLOBAL: usize = 100_000;
 pub const N_SPAWN_LOCAL: usize = 10_000;
 
-pub const YIEDL_BOUND: usize = 10;
+pub const YIELD_BOUND: usize = 10;
+pub const SPAWNER_WORK_BOUND: usize = 4;
 
 pub mod work {
     pub const MIN: usize = 1000;

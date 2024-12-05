@@ -27,7 +27,7 @@ fn bench(nspawns: &[usize], tx: SyncSender<()>, rem: Arc<AtomicUsize>, work: Cal
                 let tx = tx.clone();
 
                 tokio::spawn(async move {
-                    for _ in 0..params::YIEDL_BOUND {
+                    for _ in 0..params::YIELD_BOUND {
                         std::hint::black_box(work());
                         tokio::task::yield_now().await;
                     }
