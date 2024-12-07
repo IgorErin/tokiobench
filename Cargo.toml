@@ -5,19 +5,16 @@ edition = "2021"
 
 [dependencies]
 tokio = { path = "tokio/tokio", features = ["full"] }
-criterion = "0.5.1"
+criterion = { git = "https://github.com/IgorErin/criterion.rs", branch = "iea/iter_reuse" }
 itertools = "0.13.0"
 tokio-metrics = { path = "tokio-metrics", features = ["rt"] }
 serde = "1.0.215"
 serde_json = "1.0.132"
+cfg-if = "1.0.0"
 
 [lib]
 name = "tokiobench"
 path = "src/lib.rs"
-
-[[bin]]
-name = "mspawner"
-path = "src/mspawner.rs"
 
 [[bin]]
 name = "mremote"

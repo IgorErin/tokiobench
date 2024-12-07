@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 use itertools::iproduct;
 
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
@@ -15,11 +16,15 @@ fn bench(name: &str, func: work::Work, c: &mut Criterion) {
         let rt = rt::new(nworkers);
         let mut handles = Vec::with_capacity(nspawn);
 
-        group.bench_with_input(
+        group.bench_function(
             format!("nspawn({nspawn})/nwork({nworkers})"),
-            &(nspawn, nworkers),
-            |b, &(_, nspawn)| {
+            |b| {
                 b.iter(|| {
+                    cfg_if!(if #[cfg(feature = "check")] {
+                        assert!(handles.is_empty());
+                        assert_eq!(handles.capacity(), nspawn);
+                    });
+
                     for _ in 0..nspawn {
                         handles.push(rt.spawn(async move { func() }));
                     }
@@ -39,14 +44,6 @@ fn remote(c: &mut Criterion) {
     bench("remote", work::nothing, c);
 }
 
-fn remote_float_max(c: &mut Criterion) {
-    bench("remote_float_max", work::float_max, c);
-}
-
-fn remote_int_max(c: &mut Criterion) {
-    bench("remote_int_max", work::int_max, c);
-}
-
-criterion_group!(benches, remote, remote_float_max, remote_int_max,);
+criterion_group!(benches, remote);
 
 criterion_main!(benches);
