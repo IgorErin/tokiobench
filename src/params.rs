@@ -36,9 +36,11 @@ pub const YIEDL_BOUND: usize = 10;
 pub const SHUTDOWN_DURATION: u64 = 10;
 
 pub mod work {
-    pub const MIN: usize = 1000;
-    pub const MID: usize = 100000;
-    pub const MAX: usize = 10000000;
+    pub const FST: usize = 25;
+    pub const SND: usize = 50;
+    pub const THD: usize = 100;
+    pub const FTH: usize = 200;
+    pub const FFT: usize = 500;
 }
 
 pub mod metrics {
