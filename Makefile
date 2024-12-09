@@ -16,3 +16,8 @@ plot:
 .PHONY: metr
 metr:
 	python3 .benchpy/metric.py
+
+.PHONY: check
+check:
+	cargo check
+	cargo bench --no-run -F check
