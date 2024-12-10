@@ -4,5 +4,3 @@ pub mod rt;
 pub mod split;
 pub mod watcher;
 pub mod work;
-
-pub mod spawner;
