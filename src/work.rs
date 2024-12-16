@@ -1,7 +1,6 @@
 use std::hint::black_box;
 
 const STRANGE_FLOAT: f64 = 3.123456;
-const STRANGE_INT: usize = 13;
 
 pub type Work = fn() -> ();
 
@@ -24,54 +23,30 @@ fn float(count: usize, op: Op) {
     black_box(n);
 }
 
-#[inline(always)]
-fn int(count: usize, op: Op) {
-    let mut n: usize = 0;
-
-    for _ in 0..count {
-        match op {
-            Op::Add => n = n.wrapping_add(black_box(STRANGE_INT)),
-            Op::Mul => n = n.wrapping_mul(black_box(STRANGE_INT)),
-            Op::MulAdd => {
-                n = n.wrapping_mul(black_box(STRANGE_INT));
-                n = n.wrapping_add(black_box(STRANGE_INT));
-            }
-        }
-    }
-
-    black_box(n);
-}
-
 // float
 #[inline(always)]
-pub fn float_min() {
-    float(crate::params::work::MIN, Op::MulAdd);
+pub fn float_fst() {
+    float(crate::params::work::FST, Op::MulAdd);
 }
 
 #[inline(always)]
-pub fn float_mid() {
-    float(crate::params::work::MID, Op::MulAdd);
+pub fn float_snd() {
+    float(crate::params::work::SND, Op::MulAdd);
 }
 
 #[inline(always)]
-pub fn float_max() {
-    float(crate::params::work::MAX, Op::MulAdd);
-}
-
-// int
-#[inline(always)]
-pub fn int_min() {
-    int(crate::params::work::MIN, Op::MulAdd);
+pub fn float_thd() {
+    float(crate::params::work::THD, Op::MulAdd);
 }
 
 #[inline(always)]
-pub fn int_mid() {
-    int(crate::params::work::MID, Op::MulAdd);
+pub fn float_fth() {
+    float(crate::params::work::FTH, Op::MulAdd);
 }
 
 #[inline(always)]
-pub fn int_max() {
-    int(crate::params::work::MAX, Op::MulAdd);
+pub fn float_fft() {
+    float(crate::params::work::FFT, Op::MulAdd);
 }
 
 #[inline(always)]
