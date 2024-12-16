@@ -34,9 +34,9 @@ pub const N_SPAWN_LOCAL: usize = 10_000;
 pub const YIEDL_BOUND: usize = 10;
 
 #[cfg(not(feature = "full"))]
-pub const N_WORKERS: usize = 24;
+pub const N_WORKERS: usize = 12;
 #[cfg(feature = "full")]
-pub const N_WORKERS: usize = 48;
+pub const N_WORKERS: usize = 24;
 
 pub mod work {
     pub const FST: usize = 25;
