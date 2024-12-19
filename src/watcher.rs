@@ -16,6 +16,7 @@ pub fn run(
     metric_tx: MetricSyncSender,
     rem: Arc<AtomicUsize>,
     rt_monitor: RuntimeMonitor,
+    sample_slice: u64
 ) -> std::thread::JoinHandle<()> {
     let thread_handle = thread::spawn(move || {
         let mut metrics_count = 0;
@@ -31,7 +32,7 @@ pub fn run(
                 break;
             }
 
-            thread::sleep(Duration::from_millis(m::SAMPLE_SLICE));
+            thread::sleep(Duration::from_millis(sample_slice));
         }
     });
 

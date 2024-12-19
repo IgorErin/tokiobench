@@ -1,7 +1,9 @@
 pub mod metrics {
-    use std::fs::{self, File};
+    use std::fs::{self};
     use std::io::Write;
     use std::path::{Path, PathBuf};
+    use csv::Writer;
+    use crate::serializer::MetricsSerializable;
 
     fn path() -> PathBuf {
         let mut path = std::env::current_dir().unwrap();
@@ -23,14 +25,17 @@ pub mod metrics {
         path
     }
 
-    pub fn store(prefix: &Path, name: &str, data: &[u8]) {
+    pub fn store(prefix: &Path, name: &str, metrics : &Vec<MetricsSerializable>) {
+
         let result_path = {
             let mut prefix = PathBuf::from(prefix);
             prefix.push(name);
             prefix
         };
-
-        let mut f = File::create(result_path).unwrap();
-        f.write_all(data).unwrap();
+        let mut wrt = Writer::from_path(result_path).unwrap();
+        for metric in metrics {
+            wrt.serialize(metric).unwrap();
+        }
+        wrt.flush().unwrap();
     }
 }

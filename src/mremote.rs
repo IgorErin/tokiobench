@@ -25,7 +25,7 @@ fn run_iter(
         let handle = rt.handle();
         let rt_monitor = tokio_metrics::RuntimeMonitor::new(&handle);
 
-        watcher::run(m_tx, rem, rt_monitor)
+        watcher::run(m_tx, rem, rt_monitor, m::SAMPLE_SLICE)
     };
 
     for _ in 0..nspawn {

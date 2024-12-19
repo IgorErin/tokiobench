@@ -47,7 +47,7 @@ pub mod work {
 }
 
 pub mod metrics {
-    pub const SAMPLE_SLICE: u64 = 500;
+    pub const SAMPLE_SLICE: u64 = 50;
 
     pub const CHAN_SIZE: usize = 100000;
 
