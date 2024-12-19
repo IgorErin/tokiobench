@@ -1,11 +1,11 @@
+use itertools::{iproduct, Itertools};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
 use std::sync::{mpsc, Arc};
-
-use tokiobench::params;
 use tokiobench::params::metrics as m;
 use tokiobench::path::metrics as mpath;
 use tokiobench::rt;
+use tokiobench::serializer::MetricsSerializable;
 use tokiobench::watcher;
 
 type Handles = Vec<tokio::task::JoinHandle<()>>;
@@ -14,6 +14,7 @@ fn run_iter(
     nspawn: usize,
     nworkers: usize,
     handles: &mut Handles,
+    sample_slice: u64,
 ) -> Vec<tokio_metrics::RuntimeMetrics> {
     let rt = rt::new(nworkers);
 
@@ -25,7 +26,7 @@ fn run_iter(
         let handle = rt.handle();
         let rt_monitor = tokio_metrics::RuntimeMonitor::new(&handle);
 
-        watcher::run(m_tx, rem, rt_monitor)
+        watcher::run(m_tx, rem, rt_monitor, sample_slice)
     };
 
     for _ in 0..nspawn {
@@ -45,25 +46,35 @@ fn run_iter(
 
     assert!(handles.is_empty());
 
-    return m_rx.into_iter().collect::<Vec<_>>();
+    m_rx.into_iter().collect_vec()
 }
 
-fn run_metrics(name: &str, nspawn: usize, nworkers: usize) {
-    let name = format!("{}_nwork({})", name, nworkers);
-    let prefix = mpath::mk_prefix(&name);
-    let mut handles: Handles = Vec::with_capacity(nspawn);
+fn run_metrics(name: &str, nspawn: &[usize], nworkers: &[usize], sample_slice: u64) {
+    for (&nspawn, &nworkers) in iproduct!(nspawn, nworkers) {
+        let prefix = mpath::mk_prefix(&name);
+        let name = format!("nspawn({})_nwork({})", nspawn, nworkers);
+        let mut handles: Handles = Vec::with_capacity(nspawn);
+        let mut metrics = Vec::new();
 
-    for niter in 0..m::N_ITER {
-        let metrics = run_iter(nspawn, nworkers, &mut handles);
-        let metrics_u8 = serde_json::to_vec_pretty(&metrics).unwrap();
-
-        let name = format!("iter_{niter}.json");
-        mpath::store(&prefix, &name, &metrics_u8);
+        for niter in 0..m::N_ITER {
+            let m = run_iter(nspawn, nworkers, &mut handles, sample_slice);
+            m.iter().for_each(|m| { metrics.push(MetricsSerializable::new(niter, &m)) });
+        }
+        mpath::store(&prefix, &name, &metrics);
     }
 }
 
 fn main() -> () {
-    for nwork in params::NS_WORKERS {
-        run_metrics("remote", 10000000, nwork);
-    }
+    // collect metrics for thousands tasks
+    let nspawn: Vec<usize> = (1..=12).map(|i| i * 1000).collect();
+    let nwork: Vec<usize> = (1..=20).collect();
+    run_metrics("remote_thousands", &nspawn, &nwork,1);
+
+    // collect metrics for hundreds thousands tasks
+    let nspawn: Vec<usize> = (1..=6).map(|i| i * 100_000).collect();
+    run_metrics("remote_hthousands", &nspawn, &nwork,5);
+
+    // collect metrics for millions tasks
+    let nspawn: Vec<usize> = (1..=3).map(|i| i * 1_000_000).collect();
+    run_metrics("remote_millions", &nspawn, &nwork,20);
 }

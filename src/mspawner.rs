@@ -1,83 +1,86 @@
 use std::sync::atomic::AtomicUsize;
 use std::sync::{mpsc, Arc};
-
-use tokiobench::params;
+use std::sync::atomic::Ordering::Relaxed;
+use itertools::{iproduct, Itertools};
+use tokio::task::JoinHandle;
 use tokiobench::params::metrics as m;
 use tokiobench::path::metrics as mpath;
 use tokiobench::rt;
-use tokiobench::spawner;
+use tokiobench::serializer::MetricsSerializable;
 use tokiobench::watcher;
 
-// TOOD(enable)
-
+type Handles = Vec<JoinHandle<()>>;
 fn run_iter(
-    count_down: usize,
+    nspawn: usize,
     nworkers: usize,
-    bench_fn: spawner::BenchFn,
-) -> Vec<tokio_metrics::RuntimeMetrics> {
+    mut handles: Handles,
+    sample_slice: u64,
+) -> (Handles, Vec<tokio_metrics::RuntimeMetrics>) {
     let rt = rt::new(nworkers);
 
-    let (tx, rx) = mpsc::sync_channel(1);
     let (m_tx, m_rx) = mpsc::sync_channel(m::CHAN_SIZE);
-    let rem: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(count_down));
+    let rem: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
+    let (tx, rx) = mpsc::sync_channel(1);
 
     let metrics_handler = {
         let rem = Arc::clone(&rem);
         let handle = rt.handle();
         let rt_monitor = tokio_metrics::RuntimeMonitor::new(&handle);
 
-        watcher::run(m_tx, rem, rt_monitor)
+        watcher::run(m_tx, rem, rt_monitor, sample_slice)
     };
 
-    rt.block_on(async move {
-        bench_fn(count_down, tx, rem);
+    let _guard = rt.enter();
 
-        rx.recv().unwrap();
+    tokio::spawn(async move {
+        for _ in 0..nspawn {
+            handles.push(tokio::spawn(async { std::hint::black_box(()) }));
+        }
+
+        for handle in handles.drain(..) {
+            handle.await.unwrap();
+        }
+
+        tx.send(handles).unwrap();
     });
 
+    handles = rx.recv().unwrap();
+    assert!(handles.is_empty());
+
+    rem.fetch_sub(1, Relaxed);
     metrics_handler.join().unwrap();
 
-    return m_rx.into_iter().collect::<Vec<_>>();
+    (handles, m_rx.into_iter().collect_vec())
 }
 
-fn run_metrics(name: &str, count_down: usize, nworkers: usize, bench_fn: spawner::BenchFn) {
-    let name = format!("{}_nwork({})", name, nworkers);
-    let prefix = mpath::mk_prefix(&name);
+fn run_metrics(name: &str, nspawn: &[usize], nworkers: &[usize], sample_slice: u64) {
+    for (&nspawn, &nworkers) in iproduct!(nspawn, nworkers) {
+        let prefix = mpath::mk_prefix(&name);
+        let name = format!("nspawn({})_nwork({})", nspawn, nworkers);
+        let mut handles = Vec::with_capacity(nspawn);
+        let mut metrics = Vec::new();
 
-    for niter in 0..m::N_ITER {
-        let metrics = run_iter(count_down, nworkers, bench_fn);
-        let metrics_u8 = serde_json::to_vec_pretty(&metrics).unwrap();
-
-        let name = format!("iter_{niter}.json");
-        mpath::store(&prefix, &name, &metrics_u8);
+        for niter in 0..m::N_ITER {
+            let output = run_iter(nspawn, nworkers, handles, sample_slice);
+            handles = output.0;
+            let m = output.1;
+            m.iter().for_each(|m| { metrics.push(MetricsSerializable::new(niter, &m)) });
+        }
+        mpath::store(&prefix, &name, &metrics);
     }
 }
 
 fn main() -> () {
-    for nwork in params::NS_WORKERS {
-        run_metrics(
-            "spawner_current",
-            params::N_SPAWN_LOCAL,
-            nwork,
-            spawner::spawn_current,
-        );
-        run_metrics(
-            "spawner_local",
-            params::N_SPAWN_LOCAL,
-            nwork,
-            spawner::spawn_local,
-        );
-        run_metrics(
-            "spawner_current_mid_int",
-            params::N_SPAWN_LOCAL,
-            nwork,
-            spawner::spawn_current_mid_int,
-        );
-        run_metrics(
-            "spawner_local_mid_float",
-            params::N_SPAWN_LOCAL,
-            nwork,
-            spawner::spawn_local_mid_float,
-        );
-    }
+    // collect metrics for thousands tasks
+    let nspawn: Vec<usize> = (1..=12).map(|i| i * 1000).collect();
+    let nwork: Vec<usize> = (1..=20).collect();
+    run_metrics("spawner_thousands", &nspawn, &nwork,1);
+
+    // collect metrics for hundreds thousands tasks
+    let nspawn: Vec<usize> = (1..=6).map(|i| i * 100_000).collect();
+    run_metrics("spawner_hthousands", &nspawn, &nwork,5);
+
+    // collect metrics for millions tasks
+    let nspawn: Vec<usize> = (1..=3).map(|i| i * 1_000_000).collect();
+    run_metrics("spawner_millions", &nspawn, &nwork,20);
 }
