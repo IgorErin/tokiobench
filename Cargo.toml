@@ -11,6 +11,8 @@ tokio-metrics = { path = "tokio-metrics", features = ["rt"] }
 serde = "1.0.215"
 serde_json = "1.0.132"
 cfg-if = "1.0.0"
+futures = "0.3.31"
+lazy_static = "1.5.0"
 
 [lib]
 name = "tokiobench"
@@ -30,6 +32,10 @@ harness = false
 
 [[bench]]
 name = "spawner"
+harness = false
+
+[[bench]]
+name = "tatlin"
 harness = false
 
 [features]
