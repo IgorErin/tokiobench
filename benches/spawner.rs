@@ -1,15 +1,17 @@
 use cfg_if::cfg_if;
 use itertools::iproduct;
 
-use std::sync::mpsc;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use std::sync::atomic::Ordering::{Acquire, Release};
 use tokiobench::rt;
 
 fn bench(name: &str, nspawn: &[usize], nworker: &[usize], c: &mut Criterion) {
-    let (tx, rx) = mpsc::sync_channel(1);
     let mut group = c.benchmark_group(format!("spawner/{name}"));
+    let end = Arc::new(AtomicBool::new(false));
 
     for (&nspawn, &nworker) in iproduct!(nspawn, nworker) {
         let rt = rt::new(nworker);
@@ -23,10 +25,10 @@ fn bench(name: &str, nspawn: &[usize], nworker: &[usize], c: &mut Criterion) {
                     assert!(handles.capacity() == nspawn);
                 });
 
-                let tx = tx.clone();
                 let _guard = rt.enter();
+                let task_end = Arc::clone(&end);
 
-                tokio::spawn(async move {
+                let handle = tokio::spawn(async move {
                     for _ in 0..nspawn {
                         handles.push(tokio::spawn(async { std::hint::black_box(()) }));
                     }
@@ -35,10 +37,15 @@ fn bench(name: &str, nspawn: &[usize], nworker: &[usize], c: &mut Criterion) {
                         handle.await.unwrap();
                     }
 
-                    tx.send(handles).unwrap();
+                    task_end.store(true, Release);
+                    handles
                 });
 
-                rx.recv().unwrap()
+                while !end.load(Acquire) {
+                    std::hint::spin_loop()
+                }
+
+                rt.block_on(async { handle.await.unwrap() })
             });
         });
     }
@@ -63,8 +70,8 @@ criterion_group!(
     name = benches;
     config = Criterion::default()
         .sample_size(200)
-        .measurement_time(Duration::from_secs(100))
-        .warm_up_time(Duration::from_secs(10));
+        .measurement_time(Duration::from_secs(10))
+        .warm_up_time(Duration::from_secs(3));
 
     targets = bench_hundred, bench_thousand
 );
