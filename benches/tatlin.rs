@@ -1,4 +1,3 @@
-use cfg_if::cfg_if;
 use itertools::iproduct;
 
 use std::time::Duration;
@@ -30,7 +29,7 @@ async fn spawn_spawners(nspawner: usize, nspawn: usize) {
 }
 
 fn bench(name: &str, nspawn: &[usize], nspawner: &[usize], c: &mut Criterion) {
-    let mut group = c.benchmark_group(format!("spawner/{name}"));
+    let mut group = c.benchmark_group(format!("tatlin/{name}"));
 
     for (&nspawn, &nspawner) in iproduct!(nspawn, nspawner) {
         let rt = rt::new(NUM_THREADS);
