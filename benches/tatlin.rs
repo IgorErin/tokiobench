@@ -55,6 +55,13 @@ fn bench_tatlin(c: &mut Criterion) {
     bench("thousand", nspawn.as_ref(), nspawner.as_ref(), c)
 }
 
+fn bench_column(c: &mut Criterion) {
+    let nspawn: Vec<usize> = (1..=50).map(|i| i * 3000).collect();
+    let nspawner: Vec<usize> = (1..=1).collect();
+
+    bench("first_column", nspawn.as_ref(), nspawner.as_ref(), c)
+}
+
 criterion_group!(
     name = benches;
     config = Criterion::default()
@@ -62,7 +69,7 @@ criterion_group!(
         .measurement_time(Duration::from_secs(10))
         .warm_up_time(Duration::from_secs(3));
 
-    targets = bench_tatlin
+    targets = bench_tatlin, bench_column
 );
 
 criterion_main!(benches);
