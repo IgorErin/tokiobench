@@ -63,7 +63,7 @@ criterion_group!(
     name = benches;
     config = Criterion::default()
         .sample_size(200)
-        .measurement_time(Duration::from_secs(100))
+        .measurement_time(Duration::from_secs(10))
         .warm_up_time(Duration::from_secs(10));
 
     targets = bench_hundred, bench_thousand
