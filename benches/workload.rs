@@ -72,15 +72,15 @@ fn bench(name: &str, nspawn: &[usize], nspawner: &[usize], c: &mut Criterion) {
 }
 
 fn bench_thousand(c: &mut Criterion) {
-    let nspawn: Vec<usize> = (1..10 + 1).map(|i| i * 1000).collect();
-    let nspawner: Vec<usize> = (1..20 + 1).collect();
+    let nspawn: Vec<usize> = (1..=10).map(|i| i * 1000).collect();
+    let nspawner: Vec<usize> = (1..=20).collect();
 
     bench("thousand", nspawn.as_ref(), nspawner.as_ref(), c)
 }
 
 fn bench_hundred(c: &mut Criterion) {
-    let nspawn: Vec<usize> = (1..10 + 1).map(|i| i * 100).collect();
-    let nspawner: Vec<usize> = (1..20 + 1).collect();
+    let nspawn: Vec<usize> = (1..=10).map(|i| i * 100).collect();
+    let nspawner: Vec<usize> = (1..=20).collect();
 
     bench("hundred", nspawn.as_ref(), nspawner.as_ref(), c)
 }
