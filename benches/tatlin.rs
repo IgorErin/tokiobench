@@ -6,20 +6,20 @@ use criterion::{criterion_group, criterion_main, Criterion, Throughput};
 use tokiobench::rt;
 
 use futures::prelude::*;
-use std::sync::Arc;
 
 const NUM_THREADS: usize = 12;
 
-async fn task(data: Arc<Vec<u8>>) {
-    drop(data);
+async fn task() {
+    std::hint::black_box(());
 }
 
 async fn spawn_tasks(n: usize) {
-    let data = Arc::new(vec![1u8; 1_000_000]);
-    future::join_all((0..n).into_iter().map(|_| tokio::spawn(task(data.clone())))).await;
+    // assume compiler reduce allocation TODO()
+    future::join_all((0..n).into_iter().map(|_| tokio::spawn(task()))).await;
 }
 
 async fn spawn_spawners(nspawner: usize, nspawn: usize) {
+    // assume compiler reduce allocation TODO()
     future::join_all(
         (0..nspawner)
             .into_iter()
@@ -60,7 +60,7 @@ criterion_group!(
     config = Criterion::default()
         .sample_size(200)
         .measurement_time(Duration::from_secs(10))
-        .warm_up_time(Duration::from_secs(10));
+        .warm_up_time(Duration::from_secs(3));
 
     targets = bench_tatlin
 );
