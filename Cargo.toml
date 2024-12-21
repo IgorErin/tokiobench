@@ -19,8 +19,8 @@ name = "tokiobench"
 path = "src/lib.rs"
 
 [[bin]]
-name = "mremote"
-path = "src/mremote.rs"
+name = "mtatlin"
+path = "src/mtatlin.rs"
 
 [[bench]]
 name = "workload"

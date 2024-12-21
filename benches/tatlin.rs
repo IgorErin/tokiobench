@@ -1,5 +1,5 @@
 use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::{Acquire, Relaxed, Release};
+use std::sync::atomic::Ordering::{Acquire, Relaxed};
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::time::Duration;
