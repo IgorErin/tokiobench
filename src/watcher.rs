@@ -7,32 +7,35 @@ use std::sync::mpsc::SyncSender;
 
 use tokio_metrics::RuntimeMonitor;
 
-use crate::params::metrics as m;
+use crate::metrics;
 
 pub type MetricSyncSender = SyncSender<tokio_metrics::RuntimeMetrics>;
 
 pub fn run(
     rt_monitor: RuntimeMonitor,
-    metric_tx: MetricSyncSender,
     stop_rx: Receiver<()>,
-) -> std::thread::JoinHandle<()> {
+    slice: Duration,
+    mut result: Vec<metrics::RuntimeMetrics>,
+) -> std::thread::JoinHandle<Vec<metrics::RuntimeMetrics>> {
     let thread_handle = thread::spawn(move || {
         let mut metrics_count = 0;
 
         for interval in rt_monitor.intervals() {
             metrics_count += 1;
-            if metrics_count >= m::CHAN_SIZE {
+            if metrics_count >= result.capacity() {
                 panic!("metrics overflow");
             }
             // rewrite to vector
-            metric_tx.send(interval).unwrap();
+            result.push(metrics::from_tokio_metrics(interval));
 
             if stop_rx.try_recv().is_ok() {
                 break;
             }
 
-            thread::sleep(Duration::from_millis(m::SAMPLE_SLICE));
+            thread::sleep(slice);
         }
+
+        result
     });
 
     thread_handle

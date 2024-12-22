@@ -1,3 +1,4 @@
+pub mod metrics;
 pub mod params;
 pub mod path;
 pub mod rt;
