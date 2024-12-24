@@ -21,6 +21,18 @@ path = "src/lib.rs"
 name = "mtatlin"
 path = "src/mtatlin.rs"
 
+[[bin]]
+name = "mremote"
+path = "src/mremote.rs"
+
+[[bin]]
+name = "mworkload"
+path = "src/mworkload.rs"
+
+[[bin]]
+name = "mspawner"
+path = "src/mspawner.rs"
+
 [[bench]]
 name = "workload"
 harness = false
