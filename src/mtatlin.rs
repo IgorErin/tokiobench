@@ -53,6 +53,7 @@ fn run_sampling(name: &str, nspawn: usize, nspawner: usize) {
             "sampling({name})_nspawn({nspawn})_nspawner({nspawner})"
         ));
         mpath::store_vec(&prefix, &format!("iter({niter}).csv"), &metrics_results);
+        metrics_results.clear()
     }
 }
 

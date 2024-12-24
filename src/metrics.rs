@@ -22,6 +22,7 @@ pub struct RuntimeMetrics {
     pub total_local_queue_depth: usize,
     pub max_local_queue_depth: usize,
     pub min_local_queue_depth: usize,
+    pub global_queue_depth: usize,
     pub elapsed: u128,
 }
 
@@ -46,6 +47,7 @@ pub fn from_tokio_metrics(m: tokio_metrics::RuntimeMetrics) -> RuntimeMetrics {
         total_local_queue_depth: m.total_local_queue_depth,
         max_local_queue_depth: m.max_local_queue_depth,
         min_local_queue_depth: m.min_local_queue_depth,
+        global_queue_depth: m.global_queue_depth,
         elapsed: m.elapsed.as_nanos(),
     }
 }

@@ -102,6 +102,7 @@ fn run_metrics(name: &str, nspawn: &[usize], nspawner: &[usize], sample_slice: D
             ));
             let name = &format!("iter({niter}).csv");
             store_vec(&prefix, &name, &reuse.metrics);
+            reuse.metrics.clear()
         };
     }
 }
@@ -110,13 +111,13 @@ fn main() -> () {
     // collect metrics for thousands tasks
     let nspawn: Vec<usize> = (1..=12).map(|i| i * 1000).collect();
     let nspawner: Vec<usize> = (1..=20).collect();
-    run_metrics("workload_thousands", &nspawn, &nspawner, Duration::from_micros(10));
+    run_metrics("workload_thousands", &nspawn, &nspawner, Duration::from_micros(300));
 
     // collect metrics for hundreds thousands tasks
     let nspawn: Vec<usize> = (1..=6).map(|i| i * 100_000).collect();
-    run_metrics("workload_hthousands", &nspawn, &nspawner, Duration::from_micros(700));
+    run_metrics("workload_hthousands", &nspawn, &nspawner, Duration::from_micros(900));
 
     // collect metrics for millions tasks
     let nspawn: Vec<usize> = (1..=3).map(|i| i * 1_000_000).collect();
-    run_metrics("workload_millions", &nspawn, &nspawner, Duration::from_millis(2));
+    run_metrics("workload_millions", &nspawn, &nspawner, Duration::from_millis(4));
 }
